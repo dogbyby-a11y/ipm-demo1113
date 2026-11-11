@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>박물관 IPM 모니터링 시스템 (구글 드라이브 연동)</title>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+    <style>
+        #auth-overlay {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background-color: #1a252f; z-index: 99999; display: flex;
+            align-items: center; justify-content: center;
+        }
+        .auth-card {
+            background-color: #ffffff; padding: 35px 30px; border-radius: 8px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4); width: 340px; text-align: center;
+        }
+        .auth-card h3 { margin: 0 0 10px 0; color: #2c3e50; font-size: 20px; }
+        .auth-card p { margin: 0 0 20px 0; color: #7f8c8d; font-size: 13px; line-height: 1.5; }
+        .auth-input {
+            width: 100%; padding: 12px; font-size: 16px; border: 2px solid #bdc3c7;
+            border-radius: 6px; box-sizing: border-box; text-align: center; outline: none;
+        }
+        .auth-btn {
+            width: 100%; margin-top: 15px; padding: 12px; background-color: #1abc9c;
+            color: #ffffff; border: none; border-radius: 6px; font-size: 15px; font-weight: bold; cursor: pointer;
+        }
+        .auth-error { color: #e74c3c; font-size: 12px; margin-top: 10px; display: none; }
+
+        body {
+            font-family: 'Malgun Gothic', sans-serif; margin: 0; padding: 0;
+            background-color: #f4f6f9; display: flex; height: 100vh; color: #333; overflow: hidden;
+        }
+        .main-layout {
+            flex: 1; display: flex; flex-direction: column; height: 100vh;
+            box-sizing: border-box; padding: 20px; gap: 15px;
+        }
+        .main-header {
+            display: flex; justify-content: space-between; align-items: center; max-width: 1050px;
+        }
+        .main-header h2 { margin: 0; color: #2c3e50; font-size: 22px; }
+        .btn-capture {
+            background-color: #2980b9; color: white; border: none; padding: 9px 18px;
+            border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 13px;
+        }
+
+        #capture-area {
+            width: 640px; height: 500px; position: relative; border: 2px solid #bdc3c7;
+            border-radius: 6px; background-color: #ffffff; box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+            display: flex; flex-shrink: 0; overflow: hidden;
+        }
+        #map-viewport {
+            width: 500px; height: 500px; position: relative; overflow: hidden;
+            background-color: #d2d7d9; cursor: grab; flex-shrink: 0; border-right: 1px solid #d5dbdb;
+        }
+        #map-viewport:active { cursor: grabbing; }
+
+        #layer-container {
+            width: 500px; height: 500px; position: absolute; top: 0; left: 0;
+            transform-origin: 0 0; will-change: transform;
+        }
+        #bg-image { width: 100%; height: 100%; object-fit: fill; display: none; pointer-events: none; }
+        
+        .right-legend-panel {
+            width: 140px; height: 100%; background-color: #fcfcfc; padding: 15px 10px;
+            display: flex; flex-direction: column; gap: 12px; box-sizing: border-box; border-left: 1px solid #e5e8e8;
+        }
+        .legend-title {
+            font-size: 12px; font-weight: bold; color: #2c3e50; border-bottom: 2px solid #bdc3c7;
+            padding-bottom: 5px; text-align: center;
+        }
+        .legend-box { display: flex; flex-direction: column; gap: 8px; font-size: 11px; font-weight: bold; }
+        .legend-item { display: flex; align-items: center; gap: 6px; }
+        .legend-color { width: 12px; height: 12px; border-radius: 50%; border: 1px solid rgba(0,0,0,0.15); flex-shrink: 0; }
+        
+        .btn-reset {
+            background-color: #ecf0f1; border: 1px solid #bdc3c7; padding: 7px;
+            border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 11px;
+            text-align: center; color: #2c3e50; margin-top: auto;
+        }
+
+        .trap-station { position: absolute; width: 1px; height: 1px; transform: translate(-50%, -50%); }
+        .pest-circle {
+            position: absolute; border: 1px solid rgba(255, 255, 255, 0.95); border-radius: 50%;
+            transform: translate(-50%, -50%); mix-blend-mode: multiply; cursor: pointer;
+            box-shadow: 0 0 3px rgba(0,0,0,0.2); transition: transform 0.15s;
+        }
+        .tooltip {
+            visibility: hidden; position: absolute; background-color: rgba(32, 44, 57, 0.96);
+            color: white; padding: 10px; border-radius: 6px; font-size: 11px; z-index: 1000;
+            pointer-events: none; box-shadow: 0 4px 12px rgba(0,0,0,0.3); line-height: 1.5;
+        }
+
+        .detail-panel {
+            max-width: 1050px; background-color: white; border: 1px solid #bdc3c7;
+            border-radius: 6px; padding: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            display: flex; flex-direction: column; gap: 10px; min-height: 220px; overflow-y: auto;
+        }
+        .panel-placeholder { color: #7f8c8d; font-weight: bold; text-align: center; margin: auto; line-height: 1.5; }
+        .panel-header-title { font-size: 16px; font-weight: bold; color: #2c3e50; border-bottom: 2px solid #1abc9c; padding-bottom: 5px; margin: 0; }
+        .panel-content-wrapper { display: flex; gap: 20px; width: 100%; }
+        .panel-photos { width: 380px; display: flex; gap: 10px; flex-shrink: 0; }
+        .photo-frame {
+            flex: 1; background-color: #eaeded; border: 1px solid #d5dbdb;
+            border-radius: 4px; position: relative; height: 160px; overflow: hidden;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .photo-frame img { width: 100%; height: 100%; object-fit: contain; }
+        .photo-title {
+            position: absolute; bottom: 0; left: 0; right: 0; background-color: rgba(0,0,0,0.6);
+            color: white; font-size: 10px; text-align: center; padding: 3px 0; font-weight: bold;
+        }
+
+        .panel-info-text { flex: 1; display: flex; flex-direction: column; gap: 8px; font-size: 13px; }
+        .info-row { display: flex; border-bottom: 1px dashed #eaeded; padding-bottom: 4px; }
+        .info-label { width: 90px; font-weight: bold; color: #7f8c8d; flex-shrink: 0; }
+        .info-value { color: #2c3e50; line-height: 1.4; }
+        .pest-report-block { background-color: #f8f9f9; border-left: 4px solid #3498db; padding: 8px 12px; margin-top: 4px; border-radius: 0 4px 4px 0; }
+        .pest-report-block.danger { border-left-color: #e74c3c; background-color: #fdf2f2; }
+    </style>
+</head>
+<body>
+
+    <div id="auth-overlay">
+        <div class="auth-card">
+            <h3>🔒 모바일 현장 데모 인증</h3>
+            <p>인가된 담당자 전용 시스템입니다.<br>접속 비밀번호를 입력해 주세요.</p>
+            <input type="password" id="access-password-input" class="auth-input" placeholder="비밀번호 입력">
+            <button id="auth-submit-btn" class="auth-btn">접속 승인</button>
+            <div id="auth-error-msg" class="auth-error">비밀번호가 올바르지 않습니다.</div>
+        </div>
+    </div>
+
+    <div class="main-layout">
+        <div class="main-header">
+            <h2 id="current-view-title">📡 시스템 데이터 자동 동기화 중...</h2>
+            <button class="btn-capture" id="download-btn">📸 고해상도 도면 캡처</button>
+        </div>
+
+        <div id="capture-area">
+            <div id="no-data" style="position:absolute; top:50%; left:250px; transform:translate(-50%,-50%); color:#7f8c8d; font-weight:bold; text-align:center; z-index:10;">데이터 로딩 중...</div>
+            
+            <div id="map-viewport">
+                <div id="layer-container">
+                    <img id="bg-image" alt="도면 배경">
+                </div>
+            </div>
+
+            <div class="right-legend-panel" id="ui-overlay" style="display: none;">
+                <div class="legend-title">범 례 (Legend)</div>
+                <div class="legend-box">
+                    <div class="legend-item"><div class="legend-color" style="background-color: #e74c3c;"></div><span>직접가해해충</span></div>
+                    <div class="legend-item"><div class="legend-color" style="background-color: #e67e22;"></div><span>간접가해해충</span></div>
+                    <div class="legend-item"><div class="legend-color" style="background-color: #3498db;"></div><span>위생해충</span></div>
+                </div>
+                <button class="btn-reset" id="reset-btn">🔄 뷰 초기화</button>
+            </div>
+        </div>
+
+        <div class="detail-panel" id="detail-panel">
+            <div class="panel-placeholder" id="panel-placeholder">
+                📍 도면 위의 해충 원(스팟) 데이터를 터치하시면<br>해당 트랩의 분석 결과 및 보존과학 방제 가이드가 연동됩니다.
+            </div>
+        </div>
+    </div>
+
+    <div id="tooltip" class="tooltip"></div>
+
+    <script>
+        const ACCESS_PASSWORD = "1234";
+        const authOverlay = document.getElementById('auth-overlay');
+        const passInput = document.getElementById('access-password-input');
+        const submitBtn = document.getElementById('auth-submit-btn');
+        const errorMsg = document.getElementById('auth-error-msg');
+
+        function checkAuth() {
+            if (passInput.value === ACCESS_PASSWORD) {
+                authOverlay.style.display = 'none';
+                initAutoLoad();
+            } else {
+                errorMsg.style.display = 'block';
+                passInput.value = '';
+            }
+        }
+        submitBtn.addEventListener('click', checkAuth);
+        passInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') checkAuth(); });
+
+        const currentViewTitle = document.getElementById('current-view-title');
+        const captureArea = document.getElementById('capture-area');
+        const mapViewport = document.getElementById('map-viewport');
+        const layerContainer = document.getElementById('layer-container');
+        const bgImage = document.getElementById('bg-image');
+        const noDataMsg = document.getElementById('no-data');
+        const uiOverlay = document.getElementById('ui-overlay');
+        const resetBtn = document.getElementById('reset-btn');
+        const detailPanel = document.getElementById('detail-panel');
+        const downloadBtn = document.getElementById('download-btn');
+
+        let scale = 1; let pointX = 0; let pointY = 0;
+        let startX = 0; let startY = 0; let isDragging = false;
+        let globalProjectData = null;
+
+        async function initAutoLoad() {
+            try {
+                currentViewTitle.textContent = "⏳ 모니터링 데이터 분석 중...";
+                
+                // 1. 도면 이미지 로드
+                const mapFileName = encodeURIComponent('ㅇㅇ박물관 지하1층 기본도면.jpg');
+                bgImage.src = mapFileName;
+                bgImage.onload = () => {
+                    bgImage.style.display = 'block';
+                    noDataMsg.style.display = 'none';
+                    uiOverlay.style.display = 'flex';
+                };
+
+                // 2. 도감 엑셀 로드
+                let dictMap = {};
+                try {
+                    const dictRes = await fetch(encodeURIComponent('직접가해해충_도감.xlsx'));
+                    if (dictRes.ok) {
+                        const dictBuffer = await dictRes.arrayBuffer();
+                        const dictWb = XLSX.read(new Uint8Array(dictBuffer), {type: 'array'});
+                        const dictRows = XLSX.utils.sheet_to_json(dictWb.Sheets[dictWb.SheetNames[0]]);
+                        dictRows.forEach(r => {
+                            if (r['국명']) {
+                                dictMap[String(r['국명']).trim()] = {
+                                    target: r['가해 유물(재질)'] || '',
+                                    guide: r['권장 방제'] || ''
+                                };
+                            }
+                        });
+                    }
+                } catch(e) {
+                    console.warn("도감 파일 누락 - 기본 모드로 작동");
+                }
+
+                // 3. 모니터링 엑셀 로드
+                const dataFileName = encodeURIComponent('2026 ㅇㅇ박물관 1차 모니터링.xlsx');
+                const dataRes = await fetch(dataFileName);
+                if (!dataRes.ok) throw new Error("모니터링 엑셀 파일을 읽을 수 없습니다.");
+                
+                const dataBuffer = await dataRes.arrayBuffer();
+                const dataWb = XLSX.read(new Uint8Array(dataBuffer), {type: 'array'});
+                const dataRows = XLSX.utils.sheet_to_json(dataWb.Sheets[dataWb.SheetNames[1] || dataWb.SheetNames[0]]);
+
+                const trapGroups = {};
+                dataRows.forEach(row => {
+                    const trapId = row['트랩번호'];
+                    const x = parseFloat(row['X좌표']);
+                    const y = parseFloat(row['Y좌표']);
+                    const type = row['유해생물 유형'];
+                    const pName = row['국명'] ? String(row['국명']).trim() : '';
+                    const count = parseInt(row['개체수']) || 0;
+
+                    if (!trapId || isNaN(x) || isNaN(y)) return;
+
+                    let locData = '미지정 구역';
+                    if (row['장소2'] || row['장소3']) {
+                        const b2 = row['장소2'] ? String(row['장소2']).trim() : '';
+                        const b3 = row['장소3'] ? String(row['장소3']).trim() : '';
+                        locData = `${b2} ${b3}`.trim();
+                    } else if (row['조사구역'] || row['장소']) {
+                        locData = row['조사구역'] || row['장소'];
+                    }
+
+                    if (!trapGroups[trapId]) {
+                        trapGroups[trapId] = {
+                            x, y,
+                            location: locData,
+                            chasaText: row['모니터링 차수'] || '-',
+                            startDate: row['시작일자'] || '-',
+                            endDate: row['종료일자'] || '-',
+                            details: { '직접가해해충': {}, '간접가해해충': {}, '위생해충': {} },
+                            totals: { '직접가해해충': 0, '간접가해해충': 0, '위생해충': 0 },
+                            taxonomy: {}
+                        };
+                    }
+
+                    if (pName) {
+                        trapGroups[trapId].taxonomy[pName] = {
+                            type: type || '미분류',
+                            sciname: row['학명'] || '-',
+                            class: row['강'] || '-',
+                            order: row['목'] || '-',
+                            family: row['과'] || '-'
+                        };
+
+                        if (type && trapGroups[trapId].details[type]) {
+                            if (!trapGroups[trapId].details[type][pName]) trapGroups[trapId].details[type][pName] = 0;
+                            trapGroups[trapId].details[type][pName] += count;
+                            trapGroups[trapId].totals[type] += count;
+                        }
+                    }
+                });
+
+                globalProjectData = { spots: trapGroups, dict: dictMap };
+                renderSpots(globalProjectData);
+                currentViewTitle.textContent = "🏛️ 박물관 IPM 모니터링 시뮬레이션 대시보드";
+
+            } catch (err) {
+                console.error(err);
+                alert("데이터 로드 중 오류가 발생했습니다.");
+            }
+        }
+
+        function renderSpots(project) {
+            const existing = layerContainer.querySelectorAll('.trap-station');
+            existing.forEach(e => e.remove());
+
+            Object.keys(project.spots).forEach(trapId => {
+                const group = project.spots[trapId];
+                const station = document.createElement('div');
+                station.className = 'trap-station';
+                station.style.left = group.x + 'px';
+                station.style.top = group.y + 'px';
+
+                const order = ['직접가해해충', '간접가해해충', '위생해충'];
+                const styleConfig = {
+                    '직접가해해충': { color: 'rgba(231, 76, 60, 0.75)', z: 3 },
+                    '간접가해해충': { color: 'rgba(230, 126, 34, 0.75)', z: 2 },
+                    '위생해충': { color: 'rgba(52, 152, 219, 0.75)', z: 1 }
+                };
+
+                order.forEach(type => {
+                    const totalCount = group.totals[type];
+                    if (totalCount > 0) {
+                        const circle = document.createElement('div');
+                        circle.className = 'pest-circle';
+                        let size = 12;
+                        if (totalCount === 2) size = 16;
+                        else if (totalCount === 3) size = 20;
+                        else if (totalCount === 4) size = 24;
+                        else if (totalCount >= 5) size = 28;
+
+                        circle.style.width = size + 'px'; circle.style.height = size + 'px';
+                        circle.style.backgroundColor = styleConfig[type].color;
+                        circle.style.zIndex = styleConfig[type].z;
+
+                        circle.addEventListener('click', (e) => {
+                            e.stopPropagation();
+                            buildDetailPanel(trapId, group, project.dict);
+                        });
+
+                        station.appendChild(circle);
+                    }
+                });
+                layerContainer.appendChild(station);
+            });
+        }
+
+        function formatExcelDate(dateVal) {
+            if (!dateVal || dateVal === '-') return '-';
+            if (!isNaN(dateVal)) {
+                const date = new Date((dateVal - 25569) * 86400 * 1000);
+                return date.toISOString().split('T')[0];
+            }
+            return dateVal;
+        }
+
+        // ===============================================================
+        // 🌟 [구글 드라이브 ID 등록부]
+        // 구글 드라이브 링크나 파일 ID를 아래 따옴표 안에 넣어주시면 됩니다.
+        // ===============================================================
+        const DRIVE_PHOTOS = {
+            "C20": {
+                full: "C20_FULL_DRIVE_ID",
+                detail: "C20_DETAIL_DRIVE_ID"
+            }
+        };
+
+        // 전체 URL이든 단축 ID든 파일 ID만 자동 추출하여 구글 썸네일 고화질 주소로 변환
+        function parseDriveId(input) {
+            if (!input || input.includes("DRIVE_ID")) return null;
+            const match = input.match(/[-\w]{25,}/);
+            return match ? match[0] : input;
+        }
+
+        function getDriveImgUrl(input) {
+            const fileId = parseDriveId(input);
+            if (!fileId) return null;
+            return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
+        }
+
+        function buildDetailPanel(trapId, group, dict) {
+            const cleanTrapId = String(trapId).trim().toUpperCase();
+            const photoConfig = DRIVE_PHOTOS[cleanTrapId];
+
+            let fullPhotoUrl = photoConfig ? getDriveImgUrl(photoConfig.full) : null;
+            let detailPhotoUrl = photoConfig ? getDriveImgUrl(photoConfig.detail) : null;
+
+            let fullPhotoHtml = fullPhotoUrl 
+                ? `<img src="${fullPhotoUrl}" alt="트랩 전경" onerror="this.parentElement.innerHTML='<div style=\'color:#95a5a6; font-size:11px;\'>📷 트랩 설치 전경</div>';">`
+                : `<div style="color:#95a5a6; font-size:11px;">📷 트랩 설치 전경 (준비중)</div>`;
+
+            let detailPhotoHtml = detailPhotoUrl
+                ? `<img src="${detailPhotoUrl}" alt="해충 접사" onerror="this.parentElement.innerHTML='<div style=\'color:#95a5a6; font-size:11px;\'>🔬 해충 실물 접사 사진</div>';">`
+                : `<div style="color:#95a5a6; font-size:11px;">🔬 해충 실물 접사 사진 (준비중)</div>`;
+
+            let html = `
+                <h4 class="panel-header-title">🔍 [${trapId}번 트랩] 실시간 분석 모니터링 리포트</h4>
+                <div class="panel-content-wrapper">
+                    <div class="panel-photos">
+                        <div class="photo-frame">
+                            ${fullPhotoHtml}
+                            <div class="photo-title">📷 트랩 설치 전경</div>
+                        </div>
+                        <div class="photo-frame">
+                            ${detailPhotoHtml}
+                            <div class="photo-title">🔬 해충 실물 접사 사진</div>
+                        </div>
+                    </div>
+                    <div class="panel-info-text">
+                        <div class="info-row"><div class="info-label">🏢 조사구역</div><div class="info-value">${group.location}</div></div>
+                        <div class="info-row"><div class="info-label">📅 조사차수</div><div class="info-value">${group.chasaText}</div></div>
+                        <div class="info-row"><div class="info-label">⏱️ 조사기간</div><div class="info-value">${formatExcelDate(group.startDate)} ~ ${formatExcelDate(group.endDate)}</div></div>
+            `;
+
+            const order = ['직접가해해충', '간접가해해충', '위생해충'];
+            order.forEach(type => {
+                const pests = group.details[type];
+                Object.keys(pests).forEach(pName => {
+                    const count = pests[pName];
+                    const tax = group.taxonomy[pName] || {};
+                    const isDirect = (type === '직접가해해충');
+
+                    let targetText = "※ 유물 직접 가해 없음";
+                    let guideText = "서식처 차단을 위한 정기적인 청소 및 환경 모니터링 관리를 권장합니다.";
+
+                    if (isDirect) {
+                        if (dict && dict[pName]) {
+                            targetText = dict[pName].target || '가해 성분 검출 분석 중';
+                            guideText = dict[pName].guide || '보존과학 방제 가이드 분석 중';
+                        }
+                    }
+
+                    html += `
+                        <div class="pest-report-block ${isDirect ? 'danger' : ''}">
+                            <strong style="color:${isDirect ? '#c0392b':'#2c3e50'}; font-size:14px;">
+                                ${isDirect ? '🟥':'🟦'} ${pName} (${count}마리 포획)
+                            </strong>
+                            <div style="font-size:11px; color:#7f8c8d; margin-top:2px;">
+                                분류체계: ${tax.class || '-'} > ${tax.order || '-'} > ${tax.family || '-'} | 학명: <i>${tax.sciname || '-'}</i>
+                            </div>
+                            <div style="margin-top:5px; font-size:12px;">
+                                <span style="font-weight:bold; color:#34495e;">• 가해 대상 유물 :</span> ${targetText}
+                            </div>
+                            <div style="margin-top:2px; font-size:12px;">
+                                <span style="font-weight:bold; color:#34495e;">• 권장 방제 가이드 :</span> <span style="color:${isDirect ? '#b7950b':'#2c3e50'};">${guideText}</span>
+                            </div>
+                        </div>
+                    `;
+                });
+            });
+
+            html += `</div></div>`;
+            detailPanel.innerHTML = html;
+        }
+
+        function updateTransform() { layerContainer.style.transform = `translate(${pointX}px, ${pointY}px) scale(${scale})`; }
+        resetBtn.addEventListener('click', (e) => { e.stopPropagation(); scale = 1; pointX = 0; pointY = 0; updateTransform(); });
+
+        mapViewport.addEventListener('mousedown', (e) => {
+            e.preventDefault(); isDragging = true;
+            startX = e.clientX - pointX; startY = e.clientY - pointY;
+        });
+        window.addEventListener('mouseup', () => { isDragging = false; });
+        mapViewport.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            pointX = e.clientX - startX; pointY = e.clientY - startY; updateTransform();
+        });
+
+        mapViewport.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) {
+                isDragging = true;
+                startX = e.touches[0].clientX - pointX;
+                startY = e.touches[0].clientY - pointY;
+            }
+        });
+        window.addEventListener('touchend', () => { isDragging = false; });
+        mapViewport.addEventListener('touchmove', (e) => {
+            if (!isDragging || e.touches.length !== 1) return;
+            pointX = e.touches[0].clientX - startX;
+            pointY = e.touches[0].clientY - startY;
+            updateTransform();
+        });
+
+        mapViewport.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const xs = (e.clientX - mapViewport.getBoundingClientRect().left - pointX) / scale;
+            const ys = (e.clientY - mapViewport.getBoundingClientRect().top - pointY) / scale;
+            if (-e.deltaY > 0) { if (scale < 8) scale *= 1.15; } else { if (scale > 0.8) scale /= 1.15; }
+            pointX = e.clientX - mapViewport.getBoundingClientRect().left - xs * scale;
+            pointY = e.clientY - mapViewport.getBoundingClientRect().top - ys * scale;
+            updateTransform();
+        });
+
+        downloadBtn.addEventListener('click', function() {
+            html2canvas(captureArea, { useCORS: true, scale: 3, backgroundColor: "#ffffff" }).then(canvas => {
+                const link = document.createElement('a');
+                link.download = `IPM시각화_도면.png`;
+                link.href = canvas.toDataURL("image/png", 1.0);
+                link.click();
+            });
+        });
+    </script>
+</body>
+</html>
