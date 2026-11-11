@@ -1,0 +1,170 @@
+{
+  "traps": {
+    "C39": "1PZSiq3uN1djdxBSRw0wUU-tT_5_IRESa",
+    "C38": "1I-B7hoDEif7xyPYaU9qC9M8p9gf2YMN3",
+    "C37": "17SQyy1g7CVf1uy7LCwM5Wc_C-Nt57tSU",
+    "C36": "1QRgyhP3_Gh9s8AILKW8Zxv9lI3CIQe1G",
+    "C35": "1CRoEAfblzwg1lXpTWfcIhFtxZKKL5v13",
+    "C34": "1IU53oIdfs1samys4YpnuZxN-M1r5MRHp",
+    "C33": "1Ztu9utto0pvDEuh9a5Q4N-BJDTRPM6-w",
+    "C32": "1NlV-8YVXZ021zewTLwppUJ_XbhveMjX_",
+    "C31": "1vfRVe-OdDs7ojL6BeNYEnVy84M049jhI",
+    "C30": "1gNRZjlX7dzkURvAMbK344QJ_KooJGPnr",
+    "C29": "1ZQTqCfV5wHy7iy8RfZalZMW-CPyynBro",
+    "C28": "1nia6bqfFLfEtyr70wqvxxTzY-e5oHhM4",
+    "C27": "178YHHieA_js5dPnlMGrMeCB0WG55rM16",
+    "C26": "1191EPTC3a_UQoDIVrwCkGPhmWQv_19G7",
+    "C25": "1FQsiWzDtQEpNzQIElTn64zdEFkwGu1jP",
+    "C24": "1OwFtZhkkqm9fDNlFByj2nx9revRO2vlD",
+    "C23": "15xzncI9ZIRz_n97sukMOd4jghJKlViJG",
+    "C22": "1xXzRrvcu5bvsAGEJLTktCZtt8UXkZ3G9",
+    "C21": "1Li4Z2QMzLe_xXZNlObNN2VcJnfp9bo3t",
+    "C20": "1EgnEl1WM2ZXwUJ5VlRAgpC2p2fVquEZl",
+    "C19": "1cSTSif7xcghlidvf5CrL7pCh14ulbWF_",
+    "C18": "1oNZWSnfJlXR4jZPCDUG1qpXzV3dcRUBB",
+    "C17": "1KC58q52UO2RakINbQTf3e_zuCqtmwQoG",
+    "C16": "1KTbfqA0Zo1cWKx80Fv2QlcFvklYP8sE1",
+    "C15": "1paXqpaCgTH7fXKYSEbVoGq_2l4mEFi7U",
+    "C14": "1-lmFciJlp96y5suHxffNV9Sq5_9ELAIB",
+    "C13": "1HW5pgQjwxQx5zBl77hw_LqM6ZEFCOZd-",
+    "C12": "15n2DBJrCiUfPDNn0wTCOXoV1DKV0SQ7t",
+    "C11": "1CXCDkFFpS8BRuMfrBnpwv6iDxuDny83w",
+    "C10": "1n-bNTZ-8Gf36HseENss3Oa-sbGzRRX4e",
+    "C09": "1fbfPi9evWQZj2wtPd_gZnumcqlwBweGH",
+    "C08": "1TvrG_7MsP-mnEG8JYyW0PaU2Fj5EBgU2",
+    "C07": "1JZCQ9lawGeGs79GD4nALToRSyGdnjD3F",
+    "C06": "1pIKVPL0YAMIqjv1w4D4GkGDahfIwlxJO",
+    "C05": "1i6soQuM1rMMcuQQsB7r5CB4G6TJ0JQku",
+    "C04": "1Z8aMqpt_M1fbFMG0fZG6r5g8As8oXDzA",
+    "C03": "1mcknnAHQ32Yav3skJIFEX0ZUvN7K769X",
+    "C02": "1_9_0nLoDoXvmdqhGgwePI-Ux_gd0iIAR",
+    "C01": "1ovv3QgmE7srl3cF3_NIhOSx872W6E7BD"
+  },
+  "pests": {
+    "C38": {
+      "집가게거미": "1O_7kiPpYzDq_0izySivbYEKfBYAhvsfl",
+      "애수시렁이": "1qb8qYx2bt8WC6eN0HXkpoWMr5RmOHW00"
+    },
+    "C39": {
+      "다듬이벌레류": "14qJbNFWXoPYmGEc1Uyh-ZZ4TKjIxTum4",
+      "쥐며느리": "1JzOxH11Xpu2a6C5jZ83x7Y8v7V8jPvtJ",
+      "장다리파리": "1NagNKXki-I5PVoUs2SqBWKWWoKmI9o4l"
+    },
+    "C21": {
+      "톡토기류": "1g0ewHQ-WZv_uXWU1lSbHAIdObQo0DlAH",
+      "집그리마": "1hdXcSPcvfC9xjdnDv8_4d4n8nlIoVrsn"
+    },
+    "C33": {
+      "톡토기류": "1RGUcieqjVA5OqA5W93FVmFdbNC3VYLWR",
+      "집그리마": "1rwwazTucCDoJ6ZqGH0cqi74nVC-caM6s",
+      "집가게거미": "10zRu-39a6vVrKUHRpts9XhJTfQDQhyP2"
+    },
+    "C24": {
+      "집그리마": "1DUumxnQmc37X6JKsqczw8GGPubg_Awku"
+    },
+    "C27": {
+      "다듬이벌레류": "1up1sIe47gqWA58eEzb2QJd8SBzPrWctb"
+    },
+    "C32": {
+      "초록장님노린재2": "1cKZOZfdA5840a2wRb8o94IM5JTXDaTR9",
+      "초록장님노린재1": "1ZImi4gNpclNiWJBouAQ8lSwvqN_Sh8Zk",
+      "쥐며느리": "14jZUao4C1GIV5z0L5PjItGQDCXaKqixz"
+    },
+    "C34": {
+      "다듬이벌레류": "13LDTOrCB31nksu-XKD71bNfy-OBxD9Hm"
+    },
+    "C31": {
+      "집그리마": "1r4RMpOyea0moZx5OTuwPyCN5HQFIqJgh",
+      "한국깔때기거미": "1q_NKdn0cEZB7dqNmyC6WLNJpwTdg6yEu"
+    },
+    "C37": {
+      "집그리마": "1GZl_Hf92OAVbHyq6mUUjwVsJeHnhyNXA",
+      "집유령거미": "1M7qBDTJvGkQkopXsy5ddW4bS3oygfHO5",
+      "쥐며느리": "1d7POxFPa5pfbKODeJwwvmKyRXJnGV7tZ"
+    },
+    "C23": {
+      "집그리마": "15tjTux81t4rOY71GSYBO-vPPAhVYNS4r",
+      "쥐며느리": "1syxVdZBhmx-Js5X9-YXl1e0YeFkhKDkL",
+      "집가게거미": "1NpsMaNuc4Ld2Y4k_ov-O31IH45ALH7OP"
+    },
+    "C35": {
+      "맵시벌류": "1NBv2e723PcX4jjI3YsUsnzN2wT0EWngD",
+      "집그리마": "1gKKXgUDsRdbAOQ_ALM8RvY2lZw0nSRmH",
+      "공벌레": "1cc1sG-2LicBuoqi5D9bvMwFW8Ys4rxAl"
+    },
+    "C36": {
+      "극동귀뚜라미": "1MFXjDCYGph3ty-fbO-fVxE0iJS_v0iUO",
+      "갈색우단풍뎅이": "1JBR7ACNc3pseUJiQnQNwxUFPHMas6_lW",
+      "다듬이벌레류": "1VRU267vmxiMEOmsghX8ufEallRWGjkTU",
+      "집그리마": "1NPbRPCOF9SpBQbnRIHJlPtF91OytsMJt"
+    },
+    "C25": {
+      "집가게거미": "1v-AIzuqKg5ycTjttC1lZ5RNUqa5CVWU1"
+    },
+    "C26": {
+      "집그리마": "1ToBn0y5JA-VHt4lg88jKwwV1JAuGU8LL"
+    },
+    "C22": {
+      "집그리마": "11L_lO-XPgeg3pNEYG75nBGE_tqXKoZqQ",
+      "집유령거미": "1XeCW_hcavGWPfGIwyvmXvspuS6FmspSr"
+    },
+    "C20": {
+      "다듬이벌레류": "1y1oxOvHI_c9kvI7pqcmMzecWCZDGO3lb"
+    },
+    "C19": {
+      "집가게거미": "1DIp6K3yqlRMruZUH-qd7B-JNWLHJMtlB",
+      "톡토기류": "1pZRDvIdJM9Oc0UPT8ib8mf16PvjaC_A5"
+    },
+    "C18": {
+      "다듬이벌레류": "1UBzFgeaZ5E7fm8Q-QgD2_5nDz5djvedn",
+      "집그리마": "1j5Q2oNzsZzzPFB0ScUy2P3icTZCDOy5v"
+    },
+    "C16": {
+      "집그리마": "1hGmOGLYftqN70QbnkSoqZFhaSsfmssqI"
+    },
+    "C15": {
+      "애수시렁이": "1X6cYDroYPrOCEFqUm78M566rCOv910FD"
+    },
+    "C17": {
+      "집그리마": "1sm4RG_2EX5bt8RD_jmT4g1F3bIvjkvt4",
+      "톡토기류": "1MjBDU9hbtpag7E1-vW_FKgX8MDwl2sOV"
+    },
+    "C12": {
+      "다듬이벌레류": "1ojyirZ8tB1f9bz-HfDl-QNqUsHVxXt8W"
+    },
+    "C07": {
+      "집가게거미": "19vnLiqQfK1lYWIIXrY7uhuIfuS95d9y0",
+      "다듬이벌레류": "1EW9hcB1uUSaeTFuqQt0ZG0JWDb3bxP-K"
+    },
+    "C02": {
+      "집그리마": "1-9qcKG8tAenhgR2gvPG6hD9NfSveMLqN",
+      "민집게벌레": "1dod77Rqpy78f0HcFARcnmc1AsWJ_Q36Z"
+    },
+    "C10": {
+      "집가게거미": "159EGBmnV855US-kW7OaVW7ia5XD-MGI3"
+    },
+    "C09": {
+      "집유령거미": "1dz1NOysgsDx4uJEf3I0nx_MSpWaWKNbw",
+      "집가게거미": "1dArGuhSm4obxg2G0y4W6voR3ksOF-JdV"
+    },
+    "C04": {
+      "집그리마": "1IyV_oxnYNJPXnzLnv2qloMwCP5d9hcid"
+    },
+    "C14": {
+      "톡토기류": "1wnDX1h1zum95ohJQ_dtWLN2NCqaMMW6d",
+      "공벌레": "1winjwk4Vr7YO6GNsnjFCuztTjNEpQAHP"
+    },
+    "C13": {
+      "집그리마": "1eoyChfyrvRfYcErFJwbVUoSiqQjg8UbJ",
+      "쥐며느리": "1TQ2zd3wID8BbVf0dCuSHpwAN82b4vhPi"
+    },
+    "C03": {
+      "다듬이벌레류": "1H4nUtankSezOr-nPzp16J-_Wm4XQ22O0"
+    },
+    "C01": {
+      "집그리마": "1qUxzDcbcvCiD_PZArwJizaoDeGiX2Zx-",
+      "톡토기류": "1nlTxdJ_ElImzBxqafJ2zmqFkACZYurp3",
+      "집가게거미": "1_iwH7g_Bs16LFyIE077X8Og81OijASZ8"
+    }
+  }
+}

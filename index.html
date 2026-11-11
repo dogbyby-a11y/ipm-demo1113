@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>박물관 IPM 모니터링 시스템 (드라이브 자동 연동)</title>
+    <title>박물관 IPM 모니터링 시스템 (드라이브 실시간 연동)</title>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <style>
@@ -177,7 +177,7 @@
     </div>
 
     <script>
-        const ACCESS_PASSWORD = "0558";
+        const ACCESS_PASSWORD = "1234";
         const authOverlay = document.getElementById('auth-overlay');
         const passInput = document.getElementById('access-password-input');
         const submitBtn = document.getElementById('auth-submit-btn');
@@ -208,15 +208,14 @@
 
         let scale = 1; let pointX = 0; let pointY = 0;
         let startX = 0; let startY = 0; let isDragging = false;
+        let photoRegistry = { traps: {}, pests: {} };
 
-        // 구글 드라이브 링크/ID 파싱 함수
-        function parseDriveUrl(input) {
-            if (!input) return null;
-            const str = String(input).trim();
-            const match = str.match(/[-\w]{25,}/);
-            const fileId = match ? match[0] : str;
-            if (fileId.length < 25) return null;
-            return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
+        // 구글 드라이브 ID -> 고화질 썸네일 스트리밍 변환
+        function getDriveImgUrl(fileId) {
+            if (!fileId || typeof fileId !== 'string') return null;
+            const cleanId = fileId.trim();
+            if (cleanId.length < 20) return null;
+            return `https://drive.google.com/thumbnail?id=${cleanId}&sz=w1000`;
         }
 
         async function initAutoLoad() {
@@ -232,7 +231,18 @@
                     uiOverlay.style.display = 'flex';
                 };
 
-                // 2. 도감 엑셀 로드
+                // 2. photos.json (구글 드라이브 ID 매핑 리스트) 로드
+                try {
+                    const photoRes = await fetch('photos.json');
+                    if (photoRes.ok) {
+                        photoRegistry = await photoRes.json();
+                        console.log("구글 드라이브 사진 매핑 로드 완료:", photoRegistry);
+                    }
+                } catch(e) {
+                    console.warn("photos.json 로드 실패 - 기본 모드로 진행");
+                }
+
+                // 3. 도감 엑셀 로드
                 let dictMap = {};
                 try {
                     const dictRes = await fetch(encodeURIComponent('직접가해해충_도감.xlsx'));
@@ -251,7 +261,7 @@
                     }
                 } catch(e) {}
 
-                // 3. 모니터링 엑셀 로드
+                // 4. 모니터링 엑셀 원본 로드 (링크 열 필요 없음)
                 const dataFileName = encodeURIComponent('2026 ㅇㅇ박물관 1차 모니터링.xlsx');
                 const dataRes = await fetch(dataFileName);
                 if (!dataRes.ok) throw new Error("엑셀 파일 로드 실패");
@@ -262,7 +272,7 @@
 
                 const trapGroups = {};
                 dataRows.forEach(row => {
-                    const trapId = row['트랩번호'];
+                    const trapId = row['트랩번호'] ? String(row['트랩번호']).trim().toUpperCase() : '';
                     const x = parseFloat(row['X좌표']);
                     const y = parseFloat(row['Y좌표']);
                     const type = row['유해생물 유형'];
@@ -281,26 +291,30 @@
                     }
 
                     if (!trapGroups[trapId]) {
+                        // photos.json에서 전경 사진 ID 자동 매칭
+                        const trapFileId = (photoRegistry.traps && photoRegistry.traps[trapId]) ? photoRegistry.traps[trapId] : null;
+
                         trapGroups[trapId] = {
                             x, y,
                             location: locData,
                             chasaText: row['모니터링 차수'] || '-',
                             startDate: row['시작일자'] || '-',
                             endDate: row['종료일자'] || '-',
-                            trapPhotoUrl: parseDriveUrl(row['트랩사진'] || row['전경사진'] || row['트랩전경']),
+                            trapPhotoUrl: getDriveImgUrl(trapFileId),
                             totals: { '직접가해해충': 0, '간접가해해충': 0, '위생해충': 0 },
                             pestList: []
                         };
                     }
 
-                    // 트랩 전경 사진 보완
-                    if (!trapGroups[trapId].trapPhotoUrl) {
-                        trapGroups[trapId].trapPhotoUrl = parseDriveUrl(row['트랩사진'] || row['전경사진'] || row['트랩전경']);
-                    }
-
                     if (pName && count > 0) {
                         if (type && trapGroups[trapId].totals[type] !== undefined) {
                             trapGroups[trapId].totals[type] += count;
+                        }
+
+                        // photos.json에서 해당 트랩의 해충 접사 사진 ID 자동 매칭
+                        let macroFileId = null;
+                        if (photoRegistry.pests && photoRegistry.pests[trapId]) {
+                            macroFileId = photoRegistry.pests[trapId][pName];
                         }
 
                         trapGroups[trapId].pestList.push({
@@ -309,7 +323,7 @@
                             count: count,
                             sciname: row['학명'] || '-',
                             taxonomy: `${row['강'] || '-'} > ${row['목'] || '-'} > ${row['과'] || '-'}`,
-                            macroPhotoUrl: parseDriveUrl(row['해충사진'] || row['접사사진'] || row['해충접사'])
+                            macroPhotoUrl: getDriveImgUrl(macroFileId)
                         });
                     }
                 });
@@ -379,7 +393,7 @@
 
         function buildDetailPanel(trapId, group, dict) {
             let trapPhotoHtml = group.trapPhotoUrl 
-                ? `<img src="${group.trapPhotoUrl}" alt="트랩 전경" onerror="this.parentElement.innerHTML='<div style=\\\'color:#95a5a6; font-size:11px;\\\'>📷 트랩 설치 전경</div>';">`
+                ? `<img src="${group.trapPhotoUrl}" alt="트랩 전경" onerror="this.parentElement.innerHTML='<div style=\'color:#95a5a6; font-size:11px;\'>📷 트랩 설치 전경</div>';">`
                 : `<div style="color:#95a5a6; font-size:11px;">📷 트랩 설치 전경 (미등록)</div>`;
 
             let pestListHtml = "";
@@ -397,7 +411,7 @@
                 }
 
                 let macroImgHtml = pest.macroPhotoUrl 
-                    ? `<img src="${pest.macroPhotoUrl}" alt="${pest.name}" onerror="this.parentElement.innerHTML='<span style=\\\'font-size:10px; color:#95a5a6;\\\'>접사 없음</span>';">`
+                    ? `<img src="${pest.macroPhotoUrl}" alt="${pest.name}" onerror="this.parentElement.innerHTML='<span style=\'font-size:10px; color:#95a5a6;\'>접사 없음</span>';">`
                     : `<span style="font-size:10px; color:#95a5a6;">접사 없음</span>`;
 
                 pestListHtml += `
