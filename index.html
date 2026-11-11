@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>박물관 IPM 모니터링 시스템 (구글 드라이브 연동)</title>
+    <title>박물관 IPM 모니터링 시스템 (드라이브 자동 연동)</title>
     <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
     <style>
@@ -86,45 +86,56 @@
             transform: translate(-50%, -50%); mix-blend-mode: multiply; cursor: pointer;
             box-shadow: 0 0 3px rgba(0,0,0,0.2); transition: transform 0.15s;
         }
-        .tooltip {
-            visibility: hidden; position: absolute; background-color: rgba(32, 44, 57, 0.96);
-            color: white; padding: 10px; border-radius: 6px; font-size: 11px; z-index: 1000;
-            pointer-events: none; box-shadow: 0 4px 12px rgba(0,0,0,0.3); line-height: 1.5;
-        }
 
         .detail-panel {
             max-width: 1050px; background-color: white; border: 1px solid #bdc3c7;
             border-radius: 6px; padding: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            display: flex; flex-direction: column; gap: 10px; min-height: 220px; overflow-y: auto;
+            display: flex; flex-direction: column; gap: 12px; min-height: 240px; max-height: 380px; overflow-y: auto;
         }
         .panel-placeholder { color: #7f8c8d; font-weight: bold; text-align: center; margin: auto; line-height: 1.5; }
         .panel-header-title { font-size: 16px; font-weight: bold; color: #2c3e50; border-bottom: 2px solid #1abc9c; padding-bottom: 5px; margin: 0; }
-        .panel-content-wrapper { display: flex; gap: 20px; width: 100%; }
-        .panel-photos { width: 380px; display: flex; gap: 10px; flex-shrink: 0; }
-        .photo-frame {
-            flex: 1; background-color: #eaeded; border: 1px solid #d5dbdb;
-            border-radius: 4px; position: relative; height: 160px; overflow: hidden;
+        
+        .panel-content-wrapper { display: flex; gap: 20px; width: 100%; align-items: flex-start; }
+        .trap-photo-box {
+            width: 220px; flex-shrink: 0; background-color: #eaeded; border: 1px solid #d5dbdb;
+            border-radius: 6px; height: 180px; position: relative; overflow: hidden;
             display: flex; align-items: center; justify-content: center;
         }
-        .photo-frame img { width: 100%; height: 100%; object-fit: contain; }
-        .photo-title {
-            position: absolute; bottom: 0; left: 0; right: 0; background-color: rgba(0,0,0,0.6);
-            color: white; font-size: 10px; text-align: center; padding: 3px 0; font-weight: bold;
+        .trap-photo-box img { width: 100%; height: 100%; object-fit: contain; }
+        .photo-tag {
+            position: absolute; bottom: 0; left: 0; right: 0; background-color: rgba(0,0,0,0.65);
+            color: white; font-size: 11px; text-align: center; padding: 3px 0; font-weight: bold;
         }
 
-        .panel-info-text { flex: 1; display: flex; flex-direction: column; gap: 8px; font-size: 13px; }
-        .info-row { display: flex; border-bottom: 1px dashed #eaeded; padding-bottom: 4px; }
-        .info-label { width: 90px; font-weight: bold; color: #7f8c8d; flex-shrink: 0; }
-        .info-value { color: #2c3e50; line-height: 1.4; }
-        .pest-report-block { background-color: #f8f9f9; border-left: 4px solid #3498db; padding: 8px 12px; margin-top: 4px; border-radius: 0 4px 4px 0; }
-        .pest-report-block.danger { border-left-color: #e74c3c; background-color: #fdf2f2; }
+        .panel-info-container { flex: 1; display: flex; flex-direction: column; gap: 10px; }
+        .meta-info-bar {
+            display: flex; gap: 15px; font-size: 12px; color: #555; background: #f8f9fa;
+            padding: 8px 12px; border-radius: 4px; border-left: 3px solid #2980b9;
+        }
+        
+        .pest-card-list { display: flex; flex-direction: column; gap: 10px; }
+        .pest-card {
+            border: 1px solid #e1e8ed; border-radius: 6px; padding: 10px 12px;
+            background: #ffffff; display: flex; gap: 15px; align-items: center;
+        }
+        .pest-card.danger { border-left: 5px solid #e74c3c; background: #fdfefe; }
+        .pest-card.warning { border-left: 5px solid #e67e22; }
+        .pest-card.info { border-left: 5px solid #3498db; }
+
+        .pest-macro-img {
+            width: 80px; height: 80px; flex-shrink: 0; background: #f4f6f7;
+            border: 1px solid #d5dbdb; border-radius: 4px; overflow: hidden;
+            display: flex; align-items: center; justify-content: center;
+        }
+        .pest-macro-img img { width: 100%; height: 100%; object-fit: cover; }
+        .pest-meta-text { flex: 1; font-size: 12px; line-height: 1.5; }
     </style>
 </head>
 <body>
 
     <div id="auth-overlay">
         <div class="auth-card">
-            <h3>🔒 모바일 현장 데모 인증</h3>
+            <h3>🔒 현장 모바일 데모 인증</h3>
             <p>인가된 담당자 전용 시스템입니다.<br>접속 비밀번호를 입력해 주세요.</p>
             <input type="password" id="access-password-input" class="auth-input" placeholder="비밀번호 입력">
             <button id="auth-submit-btn" class="auth-btn">접속 승인</button>
@@ -160,15 +171,13 @@
 
         <div class="detail-panel" id="detail-panel">
             <div class="panel-placeholder" id="panel-placeholder">
-                📍 도면 위의 해충 원(스팟) 데이터를 터치하시면<br>해당 트랩의 분석 결과 및 보존과학 방제 가이드가 연동됩니다.
+                📍 도면 위의 해충 원(스팟) 데이터를 터치하시면<br>해당 트랩 전경 및 모든 해충의 실물 접사 사진과 방제 가이드가 연동됩니다.
             </div>
         </div>
     </div>
 
-    <div id="tooltip" class="tooltip"></div>
-
     <script>
-        const ACCESS_PASSWORD = "1234";
+        const ACCESS_PASSWORD = "0558";
         const authOverlay = document.getElementById('auth-overlay');
         const passInput = document.getElementById('access-password-input');
         const submitBtn = document.getElementById('auth-submit-btn');
@@ -199,7 +208,16 @@
 
         let scale = 1; let pointX = 0; let pointY = 0;
         let startX = 0; let startY = 0; let isDragging = false;
-        let globalProjectData = null;
+
+        // 구글 드라이브 링크/ID 파싱 함수
+        function parseDriveUrl(input) {
+            if (!input) return null;
+            const str = String(input).trim();
+            const match = str.match(/[-\w]{25,}/);
+            const fileId = match ? match[0] : str;
+            if (fileId.length < 25) return null;
+            return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
+        }
 
         async function initAutoLoad() {
             try {
@@ -231,14 +249,12 @@
                             }
                         });
                     }
-                } catch(e) {
-                    console.warn("도감 파일 누락 - 기본 모드로 작동");
-                }
+                } catch(e) {}
 
                 // 3. 모니터링 엑셀 로드
                 const dataFileName = encodeURIComponent('2026 ㅇㅇ박물관 1차 모니터링.xlsx');
                 const dataRes = await fetch(dataFileName);
-                if (!dataRes.ok) throw new Error("모니터링 엑셀 파일을 읽을 수 없습니다.");
+                if (!dataRes.ok) throw new Error("엑셀 파일 로드 실패");
                 
                 const dataBuffer = await dataRes.arrayBuffer();
                 const dataWb = XLSX.read(new Uint8Array(dataBuffer), {type: 'array'});
@@ -271,31 +287,34 @@
                             chasaText: row['모니터링 차수'] || '-',
                             startDate: row['시작일자'] || '-',
                             endDate: row['종료일자'] || '-',
-                            details: { '직접가해해충': {}, '간접가해해충': {}, '위생해충': {} },
+                            trapPhotoUrl: parseDriveUrl(row['트랩사진'] || row['전경사진'] || row['트랩전경']),
                             totals: { '직접가해해충': 0, '간접가해해충': 0, '위생해충': 0 },
-                            taxonomy: {}
+                            pestList: []
                         };
                     }
 
-                    if (pName) {
-                        trapGroups[trapId].taxonomy[pName] = {
-                            type: type || '미분류',
-                            sciname: row['학명'] || '-',
-                            class: row['강'] || '-',
-                            order: row['목'] || '-',
-                            family: row['과'] || '-'
-                        };
+                    // 트랩 전경 사진 보완
+                    if (!trapGroups[trapId].trapPhotoUrl) {
+                        trapGroups[trapId].trapPhotoUrl = parseDriveUrl(row['트랩사진'] || row['전경사진'] || row['트랩전경']);
+                    }
 
-                        if (type && trapGroups[trapId].details[type]) {
-                            if (!trapGroups[trapId].details[type][pName]) trapGroups[trapId].details[type][pName] = 0;
-                            trapGroups[trapId].details[type][pName] += count;
+                    if (pName && count > 0) {
+                        if (type && trapGroups[trapId].totals[type] !== undefined) {
                             trapGroups[trapId].totals[type] += count;
                         }
+
+                        trapGroups[trapId].pestList.push({
+                            name: pName,
+                            type: type || '위생해충',
+                            count: count,
+                            sciname: row['학명'] || '-',
+                            taxonomy: `${row['강'] || '-'} > ${row['목'] || '-'} > ${row['과'] || '-'}`,
+                            macroPhotoUrl: parseDriveUrl(row['해충사진'] || row['접사사진'] || row['해충접사'])
+                        });
                     }
                 });
 
-                globalProjectData = { spots: trapGroups, dict: dictMap };
-                renderSpots(globalProjectData);
+                renderSpots(trapGroups, dictMap);
                 currentViewTitle.textContent = "🏛️ 박물관 IPM 모니터링 시뮬레이션 대시보드";
 
             } catch (err) {
@@ -304,12 +323,12 @@
             }
         }
 
-        function renderSpots(project) {
+        function renderSpots(spots, dict) {
             const existing = layerContainer.querySelectorAll('.trap-station');
             existing.forEach(e => e.remove());
 
-            Object.keys(project.spots).forEach(trapId => {
-                const group = project.spots[trapId];
+            Object.keys(spots).forEach(trapId => {
+                const group = spots[trapId];
                 const station = document.createElement('div');
                 station.className = 'trap-station';
                 station.style.left = group.x + 'px';
@@ -339,7 +358,7 @@
 
                         circle.addEventListener('click', (e) => {
                             e.stopPropagation();
-                            buildDetailPanel(trapId, group, project.dict);
+                            buildDetailPanel(trapId, group, dict);
                         });
 
                         station.appendChild(circle);
@@ -358,102 +377,69 @@
             return dateVal;
         }
 
-        // ===============================================================
-        // 🌟 [구글 드라이브 ID 등록부]
-        // 구글 드라이브 링크나 파일 ID를 아래 따옴표 안에 넣어주시면 됩니다.
-        // ===============================================================
-        const DRIVE_PHOTOS = {
-            "C20": {
-                full: "C20_FULL_DRIVE_ID",
-                detail: "C20_DETAIL_DRIVE_ID"
-            }
-        };
-
-        // 전체 URL이든 단축 ID든 파일 ID만 자동 추출하여 구글 썸네일 고화질 주소로 변환
-        function parseDriveId(input) {
-            if (!input || input.includes("DRIVE_ID")) return null;
-            const match = input.match(/[-\w]{25,}/);
-            return match ? match[0] : input;
-        }
-
-        function getDriveImgUrl(input) {
-            const fileId = parseDriveId(input);
-            if (!fileId) return null;
-            return `https://drive.google.com/thumbnail?id=${fileId}&sz=w1000`;
-        }
-
         function buildDetailPanel(trapId, group, dict) {
-            const cleanTrapId = String(trapId).trim().toUpperCase();
-            const photoConfig = DRIVE_PHOTOS[cleanTrapId];
+            let trapPhotoHtml = group.trapPhotoUrl 
+                ? `<img src="${group.trapPhotoUrl}" alt="트랩 전경" onerror="this.parentElement.innerHTML='<div style=\\\'color:#95a5a6; font-size:11px;\\\'>📷 트랩 설치 전경</div>';">`
+                : `<div style="color:#95a5a6; font-size:11px;">📷 트랩 설치 전경 (미등록)</div>`;
 
-            let fullPhotoUrl = photoConfig ? getDriveImgUrl(photoConfig.full) : null;
-            let detailPhotoUrl = photoConfig ? getDriveImgUrl(photoConfig.detail) : null;
+            let pestListHtml = "";
+            group.pestList.forEach(pest => {
+                const isDirect = (pest.type === '직접가해해충');
+                let cardClass = isDirect ? 'danger' : (pest.type === '간접가해해충' ? 'warning' : 'info');
+                let typeBadge = isDirect ? '🟥 직접가해해충' : (pest.type === '간접가해해충' ? '🟧 간접가해해충' : '🟦 위생해충');
 
-            let fullPhotoHtml = fullPhotoUrl 
-                ? `<img src="${fullPhotoUrl}" alt="트랩 전경" onerror="this.parentElement.innerHTML='<div style=\'color:#95a5a6; font-size:11px;\'>📷 트랩 설치 전경</div>';">`
-                : `<div style="color:#95a5a6; font-size:11px;">📷 트랩 설치 전경 (준비중)</div>`;
+                let targetText = "※ 유물 직접 가해 없음";
+                let guideText = "서식처 차단을 위한 정기적인 청소 및 환경 모니터링 권장";
 
-            let detailPhotoHtml = detailPhotoUrl
-                ? `<img src="${detailPhotoUrl}" alt="해충 접사" onerror="this.parentElement.innerHTML='<div style=\'color:#95a5a6; font-size:11px;\'>🔬 해충 실물 접사 사진</div>';">`
-                : `<div style="color:#95a5a6; font-size:11px;">🔬 해충 실물 접사 사진 (준비중)</div>`;
+                if (isDirect && dict && dict[pest.name]) {
+                    targetText = dict[pest.name].target || targetText;
+                    guideText = dict[pest.name].guide || guideText;
+                }
 
-            let html = `
-                <h4 class="panel-header-title">🔍 [${trapId}번 트랩] 실시간 분석 모니터링 리포트</h4>
-                <div class="panel-content-wrapper">
-                    <div class="panel-photos">
-                        <div class="photo-frame">
-                            ${fullPhotoHtml}
-                            <div class="photo-title">📷 트랩 설치 전경</div>
-                        </div>
-                        <div class="photo-frame">
-                            ${detailPhotoHtml}
-                            <div class="photo-title">🔬 해충 실물 접사 사진</div>
+                let macroImgHtml = pest.macroPhotoUrl 
+                    ? `<img src="${pest.macroPhotoUrl}" alt="${pest.name}" onerror="this.parentElement.innerHTML='<span style=\\\'font-size:10px; color:#95a5a6;\\\'>접사 없음</span>';">`
+                    : `<span style="font-size:10px; color:#95a5a6;">접사 없음</span>`;
+
+                pestListHtml += `
+                    <div class="pest-card ${cardClass}">
+                        <div class="pest-macro-img">${macroImgHtml}</div>
+                        <div class="pest-meta-text">
+                            <div>
+                                <strong style="font-size:14px; color:#2c3e50;">${pest.name}</strong> 
+                                <span style="font-weight:bold; color:#e74c3c;">(${pest.count}마리)</span>
+                                <span style="font-size:10px; margin-left:6px; padding:2px 6px; border-radius:3px; background:#edf2f7;">${typeBadge}</span>
+                            </div>
+                            <div style="color:#7f8c8d; font-size:11px;">분류: ${pest.taxonomy} | 학명: <i>${pest.sciname}</i></div>
+                            <div style="margin-top:4px;"><strong>• 가해 대상:</strong> ${targetText}</div>
+                            <div><strong>• 권장 방제:</strong> <span style="color:#b7950b;">${guideText}</span></div>
                         </div>
                     </div>
-                    <div class="panel-info-text">
-                        <div class="info-row"><div class="info-label">🏢 조사구역</div><div class="info-value">${group.location}</div></div>
-                        <div class="info-row"><div class="info-label">📅 조사차수</div><div class="info-value">${group.chasaText}</div></div>
-                        <div class="info-row"><div class="info-label">⏱️ 조사기간</div><div class="info-value">${formatExcelDate(group.startDate)} ~ ${formatExcelDate(group.endDate)}</div></div>
-            `;
-
-            const order = ['직접가해해충', '간접가해해충', '위생해충'];
-            order.forEach(type => {
-                const pests = group.details[type];
-                Object.keys(pests).forEach(pName => {
-                    const count = pests[pName];
-                    const tax = group.taxonomy[pName] || {};
-                    const isDirect = (type === '직접가해해충');
-
-                    let targetText = "※ 유물 직접 가해 없음";
-                    let guideText = "서식처 차단을 위한 정기적인 청소 및 환경 모니터링 관리를 권장합니다.";
-
-                    if (isDirect) {
-                        if (dict && dict[pName]) {
-                            targetText = dict[pName].target || '가해 성분 검출 분석 중';
-                            guideText = dict[pName].guide || '보존과학 방제 가이드 분석 중';
-                        }
-                    }
-
-                    html += `
-                        <div class="pest-report-block ${isDirect ? 'danger' : ''}">
-                            <strong style="color:${isDirect ? '#c0392b':'#2c3e50'}; font-size:14px;">
-                                ${isDirect ? '🟥':'🟦'} ${pName} (${count}마리 포획)
-                            </strong>
-                            <div style="font-size:11px; color:#7f8c8d; margin-top:2px;">
-                                분류체계: ${tax.class || '-'} > ${tax.order || '-'} > ${tax.family || '-'} | 학명: <i>${tax.sciname || '-'}</i>
-                            </div>
-                            <div style="margin-top:5px; font-size:12px;">
-                                <span style="font-weight:bold; color:#34495e;">• 가해 대상 유물 :</span> ${targetText}
-                            </div>
-                            <div style="margin-top:2px; font-size:12px;">
-                                <span style="font-weight:bold; color:#34495e;">• 권장 방제 가이드 :</span> <span style="color:${isDirect ? '#b7950b':'#2c3e50'};">${guideText}</span>
-                            </div>
-                        </div>
-                    `;
-                });
+                `;
             });
 
-            html += `</div></div>`;
+            if (group.pestList.length === 0) {
+                pestListHtml = `<div style="color:#95a5a6; font-size:12px; padding:10px;">포획된 해충 개체가 없습니다.</div>`;
+            }
+
+            let html = `
+                <h4 class="panel-header-title">🔍 [${trapId}번 트랩] 실시간 분석 모니터링 종합 리포트</h4>
+                <div class="panel-content-wrapper">
+                    <div class="trap-photo-box">
+                        ${trapPhotoHtml}
+                        <div class="photo-tag">📷 트랩 설치 전경</div>
+                    </div>
+                    <div class="panel-info-container">
+                        <div class="meta-info-bar">
+                            <div><b>🏢 조사구역:</b> ${group.location}</div>
+                            <div><b>📅 조사차수:</b> ${group.chasaText}</div>
+                            <div><b>⏱️ 조사기간:</b> ${formatExcelDate(group.startDate)} ~ ${formatExcelDate(group.endDate)}</div>
+                        </div>
+                        <div class="pest-card-list">
+                            ${pestListHtml}
+                        </div>
+                    </div>
+                </div>
+            `;
             detailPanel.innerHTML = html;
         }
 
